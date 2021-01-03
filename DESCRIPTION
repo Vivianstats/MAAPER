@@ -1,0 +1,25 @@
+Package: MAAPER
+Title: Model-based Analysis of Alternative Polyadenylation Using 3' End-linked Reads
+Version: 1.0.0
+Authors@R: 
+    person(given = "Wei Vivian",
+           family = "Li",
+           role = c("aut", "cre"),
+           email = "vivian.li@rutgers.edu",
+           comment = c(ORCID = "0000-0002-2087-2709"))
+Description: MAAPER is a computational method developed for model-based analysis of alternative polyadenylation using 3’ end-linked reads. It accurately assigns nearSite reads to PASs through statistical modeling, and generates multiple statistics for APA analysis. 
+License: GPL-3
+Encoding: UTF-8
+LazyData: true
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.1.1
+Imports: 
+    parallel,
+    GenomicRanges,
+    GenomicAlignments,
+    GenomicFeatures,
+    GenomeInfoDb,
+    stats,
+    utils,
+    Rsamtools,
+    IRanges
