@@ -1,7 +1,7 @@
 MAAPER: Model-based analysis of alternative polyadenylation using 3' end-linked reads
 ================
 Wei Vivian Li, Bin Tian
-2021-01-02
+2021-01-12
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <img src="https://github.com/Vivianstats/data-pkg/raw/main/img/MAAPER.png" height="200" align="right" />
@@ -42,8 +42,8 @@ Below is a basic example which shows how to use the `maaper` function. The bam a
 ``` r
 library(MAAPER)
 
-pas_annotation = "./mouse.PAS.mm9.rds"
-gtf = ".gencode.mm9.chr19.gtf"
+pas_annotation = readRDS("./mouse.PAS.mm9.rds")
+gtf = "./gencode.mm9.chr19.gtf"
 # bam file of condition 1 (could be a vector if there are multiple samples)
 bam_c1 = "./NT_chr19_example.bam"
 # bam file of condition 2 (could be a vector if there are multiple samples)

@@ -55,8 +55,8 @@ Below is a basic example which shows how to use the `maaper` function. The bam a
 ```{r eval = FALSE}
 library(MAAPER)
 
-pas_annotation = "./mouse.PAS.mm9.rds"
-gtf = ".gencode.mm9.chr19.gtf"
+pas_annotation = readRDS("./mouse.PAS.mm9.rds")
+gtf = "./gencode.mm9.chr19.gtf"
 # bam file of condition 1 (could be a vector if there are multiple samples)
 bam_c1 = "./NT_chr19_example.bam"
 # bam file of condition 2 (could be a vector if there are multiple samples)
