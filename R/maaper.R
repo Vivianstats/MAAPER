@@ -21,7 +21,7 @@
 #' @param region "all" (default). For test and debug only.
 #' @param gtf_rds NULL (default). For test and debug only.
 #' @param verbose FALSE (default). For test and debug only.
-#' @return \code{mapper} saves two text files, gene.txt and pas.txt, to \code{out_dir}.
+#' @return \code{maaper} saves two text files, gene.txt and pas.txt, to \code{out_dir}.
 #' pas.txt contains the gene names, predicted PASs, and their corresponding fractions in the two conditions.
 #' gene.txt contains the genes' PAS number, p values, RED, RLDu, and RLDi scores.
 #' @export
@@ -40,7 +40,7 @@ maaper = function(gtf, pas_annotation, output_dir, bam_c1, bam_c2,
                   num_pas_thre = 25, frac_pas_thre = 0.05,
                   dist_thre = 600, num_thre = 50,
                   run = "all", subset = NULL, region = "all",
-                  gtf_rds = NULL, verbose = FALSE){
+                  gtf_rds = NULL, verbose = FALSE, paired = FALSE){
   dir.create(output_dir, recursive = T)
 
 
@@ -62,12 +62,15 @@ maaper = function(gtf, pas_annotation, output_dir, bam_c1, bam_c2,
   }else{
     exons_gr = readRDS(gtf_rds)
   }
+  message("Sequence levels in GTF:")
+  print(seqlevels(exons_gr))
 
   message("Prepare PAS annotation ...")
   pas_by_gene_single = get_pas_by_gene_single(pas_annotation)
   density_train_path = paste0(output_dir, "density_train.rds")
 
   save_path = paste0(output_dir, "result.rds")
+  
   wrap(pas_by_gene_single,
        pas_by_gene = pas_annotation, exons_gr,
        bam_c1, bam_c2, density_train_path,
@@ -82,9 +85,11 @@ maaper = function(gtf, pas_annotation, output_dir, bam_c1, bam_c2,
        subset,
        region,
        verbose,
-       output_dir)
+       output_dir,
+       paired = paired)
   gc()
-  mapper_write(save_path, output_dir)
+  print(paired)
+  maaper_write(save_path, output_dir, paired = paired)
 }
 
 maaper_predict = function(gtf, pas_annotation, output_dir, bam,

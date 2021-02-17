@@ -103,7 +103,8 @@ get_pdist_singlePAS = function(bam_path, exons_gr_nover, pas_by_gene_single,
 }
 
 
-get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann, num_thre, dist_thre, read_len, region = "exon-only"){
+get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann, num_thre, dist_thre, read_len, 
+                          region = "exon-only", paired = FALSE){
   
   ## exon stats
   str = pas_ann$Strand[1]
@@ -239,6 +240,7 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
       pval = rep(0, length(dval))
       pval[dval >= 0 & dval <= dist_thre] = distp[1+dval[dval >= 0 & dval <= dist_thre]]
       pval[dval > dist_thre] = min(distp)/exp(0.05*(dval[dval > dist_thre]-dist_thre))
+      # pval[dval > dist_thre] = 0
       pmat = matrix(pval, ncol = ncol(dist))
       colnames(pmat) = colnames(dist)
       pmat = pmat[rowSums(pmat) > 1e-5, , drop = FALSE]
@@ -255,22 +257,41 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
   })
   if(min(sum(nreads[[1]]), sum(nreads[[2]])) < num_thre)return(NULL)
   names(nreads) = conds
-  prob_reads_by_pas = lapply(conds, function(con){
-    mat = Reduce(rbind, prob_reads_by_pas[[con]])
-    return(mat)
-  })
-  names(prob_reads_by_pas) = conds
-  pas_filtered = lapply(conds, function(con){
-    mat = prob_reads_by_pas[[con]]
-    colnames(mat)[colSums(mat) > 1e-3]
-  })
-  pas_filtered = Reduce(union, pas_filtered)
-  # if(length(pas_filtered) < 2) return(NULL)
-  pas_filtered = sort(pas_filtered)
-  prob_reads_by_pas = lapply(prob_reads_by_pas, function(mat){
-    mat = mat[, pas_filtered, drop = FALSE]
-    return(mat)
-  })
+  if(paired == FALSE){
+    prob_reads_by_pas = lapply(conds, function(con){
+      mat = Reduce(rbind, prob_reads_by_pas[[con]])
+      return(mat)
+    })
+    names(prob_reads_by_pas) = conds
+    pas_filtered = lapply(conds, function(con){
+      mat = prob_reads_by_pas[[con]]
+      colnames(mat)[colSums(mat) > 1e-3]
+    })
+    pas_filtered = Reduce(union, pas_filtered)
+    # if(length(pas_filtered) < 2) return(NULL)
+    pas_filtered = sort(pas_filtered)
+    prob_reads_by_pas = lapply(prob_reads_by_pas, function(mat){
+      mat = mat[, pas_filtered, drop = FALSE]
+      return(mat)
+    })
+  }else{
+    names(prob_reads_by_pas) = conds
+    pas_filtered = lapply(conds, function(con){
+      mat = Reduce(rbind, prob_reads_by_pas[[con]])
+      colnames(mat)[colSums(mat) > 1e-3]
+    })
+    pas_filtered = Reduce(union, pas_filtered)
+    # if(length(pas_filtered) < 2) return(NULL)
+    pas_filtered = sort(pas_filtered)
+    prob_reads_by_pas = lapply(prob_reads_by_pas, function(ls){
+      ls = lapply(1:length(ls), function(k){
+        mat = ls[[k]][, pas_filtered, drop = FALSE]
+        return(mat)
+      })
+      return(ls)
+    })
+  }
+
   gc()
   return(list(prob = prob_reads_by_pas, nreads = nreads,
               coordOnTxPos = coordOnTxPos))

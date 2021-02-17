@@ -5,3 +5,83 @@ get_pas_by_gene_single = function(pas_by_gene){
   names(pas_by_gene_single) = sapply(pas_by_gene_single, function(x) x$Gene.Symbol[1])
   return(pas_by_gene_single)
 }
+
+trunc_matrix = function(Smat){
+  eSmat = eigen(Smat)
+  eSmat$values[eSmat$values < 0] = 0
+  Smat = eSmat$vectors %*% diag(eSmat$values) %*% t(eSmat$vectors)
+  return(Smat)
+}
+
+paired_test = function(X1, X2){
+  npas = nrow(X1)
+  n = ncol(X1)
+  
+  N1 = colSums(X1)
+  N2 = colSums(X2)
+  NN1 = sum(N1)
+  NN2 = sum(N2)
+  
+  mi1 = t(t(X1) / N1)
+  mi2 = t(t(X2) / N2)
+  fraclist = lapply(1:n, function(i){
+    cbind(mi1[,i], mi2[, i])
+  })
+  
+  if(NN1 <= n | NN2 <= n){
+    return(list(pvalue = NA, fraclist = fraclist))
+  }else{
+    idx = which(N1 > 0 & N2 > 0)
+    if(length(idx) < n){
+      if(length(idx) == 1) return(list(pvalue = NA, fraclist = fraclist))
+      X1 = X1[, idx]
+      X2 = X2[, idx]
+      n = ncol(X1)
+    }
+    if(n - npas < 2){
+      a = rowSums(X1) + rowSums(X2)
+      idx = order(a, decreasing = T)[1:(n-2)]
+      X1 = X1[idx, ]
+      X2 = X2[idx, ]
+      npas = nrow(X1)
+    }
+    
+    N1 = colSums(X1)
+    N2 = colSums(X2)
+    NN1 = sum(N1)
+    NN2 = sum(N2)
+    
+    mi1 = t(t(X1) / N1)
+    mi2 = t(t(X2) / N2)
+    
+    Mc1 = (NN1 - sum(N1^2) / NN1) / (n-1)
+    Mc2 = (NN2 - sum(N2^2) / NN2) / (n-1)
+    
+    m1 = rowSums(X1) / NN1
+    m2 = rowSums(X2) / NN2
+    mi1 = t(t(X1) / N1)
+    mi2 = t(t(X2) / N2)
+    diff1 = mi1 - m1
+    diff2 = mi2 - m2
+    S1 = diff1 %*% diag(N1) %*% t(diff1) / (n-1)
+    S2 = diff2 %*% diag(N2) %*% t(diff2) / (n-1)
+    G1 = (diag(mi1 %*% N1) - mi1 %*% diag(N1) %*% t(mi1)) / (NN1-n)
+    G2 = (diag(mi2 %*% N2) - mi2 %*% diag(N2) %*% t(mi2)) / (NN2-n)
+    V = diff1 %*% diag(N1+N2) %*% t(diff2) /(Mc1+Mc2) / (n-1)
+    
+    V = (V + t(V)) * sum(N1*N2) / (NN1*NN2)
+    Sig1 = S1 * sum(N1^2) / Mc1 / (NN1^2) + G1 * (Mc1 - sum(N1^2) / NN1) / NN1 / Mc1
+    Sig2 = S2 * sum(N2^2) / Mc2 / (NN2^2) + G2 * (Mc2 - sum(N2^2) / NN2) / NN2 / Mc2
+    Sig1 = trunc_matrix(Sig1)
+    Sig2 = trunc_matrix(Sig2)
+    
+    Smat = Sig1 + Sig2 - V
+    Smat = trunc_matrix(Smat)
+    
+    stat = t(m1-m2) %*% ginv(Smat) %*% (m1-m2) * (n-npas+1)/(n-1)/(npas-1)
+    pval = 1-pf(as.numeric(stat), npas-1, n-npas+1)
+  }
+  return(list(Smat = Smat, pvalue = pval, fraclist = fraclist))
+}
+
+

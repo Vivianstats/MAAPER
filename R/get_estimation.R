@@ -44,12 +44,12 @@ select_forward_pred = function(max_step, idx_init, pas_pos,
       init = matrix(1/(ncrr+1), ncol = 2, nrow = ncrr+1)
       pmat1 = plist[, idx_crr, drop = FALSE]
       alp_curr = est_alp_forward_pred(pmat1, init, iter = 500)
-      loglik_curr = get_loglik_pred(pmat1, alp_hat = alp_curr) 
+      loglik_curr = get_loglik_pred(pmat1, alp_hat = alp_curr)
       return(loglik_curr)
     })
     loglik_alt = max(loglik_forw)
     idx_new = which.max(loglik_forw)
-    
+
     loglik_diff = loglik_alt - loglik_null
     dist_to_sel = min(abs(pas_pos[idx_new] - pas_pos[idx_sel]))
     if(dist_to_sel < 100){ # < mode
@@ -67,14 +67,14 @@ select_forward_pred = function(max_step, idx_init, pas_pos,
     if(length(idx_sel) == JJ-length(idx_out)){break}
     steps = steps + 1
   }
-  if(length(idx_sel) < 2)return(list(idx_sel = idx_sel, 
+  if(length(idx_sel) < 2)return(list(idx_sel = idx_sel,
                                      alp = matrix(1, nrow=1, ncol = 2)))
-  
+
   init = matrix(1/ncrr, ncol = 2, nrow = ncrr)
   pmat1 = plist[, idx_sel, drop = FALSE]
   alp_curr = est_alp_forward_pred(pmat1, init, iter = 500)
   return(list(idx_sel = idx_sel, alp = alp_curr))
-  
+
 }
 
 ### For APA
@@ -99,14 +99,14 @@ est_alp_forward = function(pmat1, pmat2, init, iter = 500){
     num1 = pmat1 * matrix(rep(alp_crr[,1], n1), nrow = n1, byrow = T)
     alp_new[,1] = colMeans(num1/denom1, na.rm = T)
     # alp_new[,1] = colMeans((num1[denom1>0])/(denom1[denom1>0]))
-    
+
     n2 = nrow(pmat2)
     denom2 = pmat2 %*% alp_crr[,2, drop = FALSE]
     denom2 = matrix(rep(denom2, J), ncol = J, byrow = F)
     num2 = pmat2 * matrix(rep(alp_crr[,2], n2), nrow = n2, byrow = T)
     alp_new[,2] = colMeans(num2/denom2, na.rm = T)
     # alp_new[,2] = colMeans((num2[denom2>0])/(denom2[denom2>0]))
-    
+
     error = mean((alp_new - alp_crr)^2)
     #print(error)
     if(error < 1e-5){
@@ -139,14 +139,14 @@ select_forward = function(max_step, idx_init, pas_pos,
       pmat1 = plist[[1]][, idx_crr, drop = FALSE]
       pmat2 = plist[[2]][, idx_crr, drop = FALSE]
       alp_curr = est_alp_forward(pmat1, pmat2, init, iter = 500)
-      loglik_curr = get_loglik(plist[[1]][,idx_crr,drop = FALSE], 
-                               plist[[2]][,idx_crr,drop = FALSE],  
-                               alp_hat = alp_curr) 
+      loglik_curr = get_loglik(plist[[1]][,idx_crr,drop = FALSE],
+                               plist[[2]][,idx_crr,drop = FALSE],
+                               alp_hat = alp_curr)
       return(loglik_curr)
     })
     loglik_alt = max(loglik_forw)
     idx_new = which.max(loglik_forw)
-    
+
     loglik_diff = loglik_alt - loglik_null
     dist_to_sel = min(abs(pas_pos[idx_new] - pas_pos[idx_sel]))
     if(dist_to_sel < 100){ # < mode
@@ -162,7 +162,7 @@ select_forward = function(max_step, idx_init, pas_pos,
       loglik_null =  loglik_alt
       # print(pval)
       # print(loglik_null)
-      
+
       ## for testing
       # init = matrix(1/ncrr, ncol = 2, nrow = ncrr)
       # pmat1 = plist[[1]][, idx_sel]
@@ -173,7 +173,7 @@ select_forward = function(max_step, idx_init, pas_pos,
     if(length(idx_sel) == JJ-length(idx_out)){break}
     steps = steps + 1
   }
-  if(length(idx_sel) < 2)return(list(idx_sel = idx_sel, 
+  if(length(idx_sel) < 2)return(list(idx_sel = idx_sel,
                                      alp = matrix(1, nrow=1, ncol = 2)))
   ## for testing
   init = matrix(1/ncrr, ncol = 2, nrow = ncrr)
@@ -232,7 +232,7 @@ get_de_null = function(idx_sel, plist, iter = 500){
 ### calculate RLD (relative length difference)
 get_RLD = function(exongr, frac){
   str = as.character(strand(exongr)[1])
-  
+
   pos = strsplit(rownames(frac), split="\\:")
   pos = as.numeric(sapply(pos, function(x) x[2]))
 
@@ -242,13 +242,28 @@ get_RLD = function(exongr, frac){
   return(RLD)
 }
 
+get_RLD_sample = function(exongr, fraclist){
+  str = as.character(strand(exongr)[1])
+  
+  pos = strsplit(rownames(fraclist[[1]]), split="\\:")
+  pos = as.numeric(sapply(pos, function(x) x[2]))
+  
+  if(str == "+")coord = pos - min(pos) + 1
+  if(str == "-")coord = max(pos) - pos + 1
+  
+  RLD = sapply(fraclist, function(frac){
+    log2(sum(frac[,2] * coord)/sum(frac[,1] * coord))
+  })
+  return(RLD)
+}
+
 get_RID = function(exongr, frac, pas.type){
   pos = strsplit(rownames(frac), split="\\:")
   pos = as.numeric(sapply(pos, function(x) x[2]))
-  
+
   ## exon stats
   str = as.character(strand(exongr)[1])
-  
+
   if(str == "+"){
     coord = pos - min(pos) + 1
   }
@@ -263,22 +278,27 @@ get_RID = function(exongr, frac, pas.type){
   return(RLD)
 }
 
-# get_RGD = function(exongr, frac){
-#   pos = strsplit(rownames(frac), split="\\:")
-#   pos = as.numeric(sapply(pos, function(x) x[2]))
-#   
-#   ## exon stats
-#   str = as.character(strand(exongr)[1])
-#   
-#   if(str == "+"){
-#     start = start(exongr)[1]
-#     coordOnGene = pos - start + 1
-#   }
-#   if(str == "-"){
-#     start = end(exongr)[length(exongr)]
-#     coordOnGene = start - pos + 1
-#   }
-#   RLD = log2(sum(frac[,2] * coordOnGene)/sum(frac[,1] * coordOnGene))
-#   return(RLD)
-# }
+get_RID_sample = function(exongr, fraclist, pas.type){
+  pos = strsplit(rownames(fraclist[[1]]), split="\\:")
+  pos = as.numeric(sapply(pos, function(x) x[2]))
+  
+  ## exon stats
+  str = as.character(strand(exongr)[1])
+  
+  if(str == "+"){
+    coord = pos - min(pos) + 1
+  }
+  if(str == "-"){
+    coord = max(pos) - pos + 1
+  }
+  idxi = which(pas.type != "3' most exon")
+  idxu = which(pas.type == "3' most exon")
+  
+  RLD = sapply(fraclist, function(frac){
+    ratio2 = sum(frac[idxu, 2]*coord[idxu])/sum(frac[idxi,2]*coord[idxi])
+    ratio1 = sum(frac[idxu, 1]*coord[idxu])/sum(frac[idxi,1]*coord[idxi])
+    RLD = log2(ratio2/ratio1)
+  })
+  return(RLD)
+}
 
