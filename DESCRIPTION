@@ -1,6 +1,6 @@
 Package: MAAPER
 Title: Model-based Analysis of Alternative Polyadenylation Using 3' End-linked Reads
-Version: 1.0.0
+Version: 1.0.1
 Authors@R: 
     person(given = "Wei Vivian",
            family = "Li",
