@@ -20,7 +20,9 @@ maaper(
   subset = NULL,
   region = "all",
   gtf_rds = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  paired = FALSE,
+  bed = FALSE
 )
 }
 \arguments{
@@ -60,14 +62,29 @@ Check the \code{pas_annotation} files for ID formats.}
 \item{gtf_rds}{NULL (default). For test and debug only.}
 
 \item{verbose}{FALSE (default). For test and debug only.}
+
+\item{paired}{A boolean indicating whether to perform paired test instead of unpaired test (defaults to FALSE).}
+
+\item{bed}{Aboolean indicating whether bedGraph files should be output for visualization in genome browser.}
 }
 \value{
-\code{mapper} saves two text files, gene.txt and pas.txt, to \code{out_dir}.
+\code{maaper} saves two text files, gene.txt and pas.txt, to \code{out_dir}.
 pas.txt contains the gene names, predicted PASs, and their corresponding fractions in the two conditions.
 gene.txt contains the genes' PAS number, p values, RED, RLDu, and RLDi scores.
 }
 \description{
 Model-based analysis of alternative polyadenylation using 3’ end-linked reads
+}
+\examples{
+\dontrun{
+# data used in this example can be found on the package's Github page
+pas_annotation = readRDS("./mouse.PAS.mm9.rds")
+gtf = "./gencode.mm9.chr19.gtf"
+bam_c1 = "./NT_chr19_example.bam"
+bam_c2 = "./AS_4h_chr19_example.bam"
+maaper(gtf, pas_annotation, output_dir = "./",
+       bam_c1, bam_c2, read_len = 76, ncores = 1)
+}
 }
 \author{
 Wei Vivian Li, \email{vivian.li@rutgers.edu}

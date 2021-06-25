@@ -1,6 +1,6 @@
-get_pdist_singlePAS = function(bam_path, exons_gr_nover, pas_by_gene_single, 
+get_pdist_singlePAS = function(bam_path, exons_gr_nover, pas_by_gene_single,
                                num_thre = 10, dist_thre= 1000, ncores){
-  
+
   genes_single = names(pas_by_gene_single)
   dist_train = mclapply(1:length(pas_by_gene_single), function(i){
     if(i %% 500 == 0) {print(i); gc()}
@@ -17,24 +17,24 @@ get_pdist_singlePAS = function(bam_path, exons_gr_nover, pas_by_gene_single,
     exonLens = ends - starts + 1
     if(sum(exonLens) < 400)return(NULL)
     exonLensCum = c(0,cumsum(exonLens))
-    
+
     if(str == "+"){
       gend = max(ends[ne], pos)
-      genegr = GRanges(seqnames = chr, 
+      genegr = GRanges(seqnames = chr,
                        strand = str,
                        ranges = IRanges(start = starts[1], end = gend))
     }
     if(str == "-"){
       gstart = min(starts[1], pos)
-      genegr = GRanges(seqnames = chr, 
+      genegr = GRanges(seqnames = chr,
                        strand = str,
                        ranges = IRanges(start = gstart, end = ends[ne]))
     }
-    
+
     readstarts = get_reads_stranded(gene_gr = genegr, num_thre, bam_path)
     if(is.null(readstarts)) return(NULL)
-    
-    readgr = GRanges(seqnames = chr, 
+
+    readgr = GRanges(seqnames = chr,
                      strand = str,
                      ranges = IRanges(start = readstarts, width = 1))
     readgr = subsetByOverlaps(readgr, exongr)
@@ -65,7 +65,7 @@ get_pdist_singlePAS = function(bam_path, exons_gr_nover, pas_by_gene_single,
       nread = length(readstarts)
       coordOnTx = rep(0, nread)
       # maps to exon
-      idx1 = which(eread == eread2 + 1) 
+      idx1 = which(eread == eread2 + 1)
       if(length(idx1) > 0){
         coordOnTx[idx1] = exonLensCum[eread[idx1]] + readstarts[idx1] - starts[eread[idx1]] + 1
       }
@@ -81,10 +81,10 @@ get_pdist_singlePAS = function(bam_path, exons_gr_nover, pas_by_gene_single,
       # intron (not counting intron length for now)
       idx4 = which(eread == eread2 & eread < ne & eread > 0)
       if(length(idx4) > 0){
-        # coordOnTx[idx4] = exonLensCum[eread[idx4]+1] 
+        # coordOnTx[idx4] = exonLensCum[eread[idx4]+1]
         coordOnTx = coordOnTx[-idx4]
       }
-      
+
       dist =  coordOnTxPos - coordOnTx
       if(str == "-"){dist = -dist}
     }
@@ -92,20 +92,20 @@ get_pdist_singlePAS = function(bam_path, exons_gr_nover, pas_by_gene_single,
   }, mc.cores = ncores)
   a = sum(!sapply(dist_train, is.null))
   message(paste(a, "genes used for training ..."))
-  
+
   dist_all = unlist(dist_train)
   b = round(mean(dist_all > dist_thre), digits = 4)
   message(paste(b, "fragments longer than", dist_thre, "..."))
-  
+
   dist_all = dist_all[dist_all <= dist_thre]
   pdist = density(dist_all, from = 0, to = dist_thre, n = dist_thre+1)
   return(pdist)
 }
 
 
-get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann, num_thre, dist_thre, read_len, 
+get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann, num_thre, dist_thre, read_len,
                           region = "exon-only", paired = FALSE){
-  
+
   ## exon stats
   str = pas_ann$Strand[1]
   chr = as.character(seqnames(exongr)[1])
@@ -122,13 +122,13 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
   npos = length(pos)
   coordOnTxPos = rep(0, npos)
   # maps to exon
-  idx1 = which(epos == epos2 + 1) 
+  idx1 = which(epos == epos2 + 1)
   if(length(idx1) > 0){
     coordOnTxPos[idx1] = exonLensCum[epos[idx1]] + pos[idx1] - starts[epos[idx1]] + 1
   }
   # 3' UTR extension
   idx2 = which(epos == ne & epos2 == ne)
-  
+
   if(length(idx2) > 0){
     coordOnTxPos[idx2] = exonLensCum[ne+1] + pos[idx2] - ends[ne] + 1
   }
@@ -136,27 +136,27 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
   if(length(idx3) > 0){
     coordOnTxPos[idx3] = pos[idx3] - starts[1] + 1
   }
-  
-  # intron 
+
+  # intron
   idx4 = which(epos == epos2 & epos < ne & epos > 0)
   if(length(idx4) > 0){
     coordOnTxPos[idx4] = pos[idx4] + exonLensCum[ne+1]
   }
   names(coordOnTxPos) = pos
-  
+
   if(str == "+"){
     gend = max(ends[ne], max(pas_ann$Position))
-    genegr = GRanges(seqnames = chr, 
+    genegr = GRanges(seqnames = chr,
                      strand = str,
                      ranges = IRanges(start = starts[1], end = gend))
   }
   if(str == "-"){
     gstart = min(starts[1], min(pas_ann$Position))
-    genegr = GRanges(seqnames = chr, 
+    genegr = GRanges(seqnames = chr,
                      strand = str,
                      ranges = IRanges(start = gstart, end = ends[ne]))
   }
-  
+
   dist_by_pas = lapply(conds, function(con){
     if(con == conds[1]){bam_paths = bam_c1}
     if(con == conds[2]){bam_paths = bam_c2}
@@ -165,9 +165,9 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
       bam_path = bam_paths[k]
       readstarts = get_reads_stranded(genegr, num_thre, bam_path)
       if(length(readstarts) <= num_thre) return(NULL)
-      
+
       if(region == "exon-only"){
-        readgr = GRanges(seqnames = chr, 
+        readgr = GRanges(seqnames = chr,
                          strand = str,
                          ranges = IRanges(start = readstarts, width = 1))
         readgr = subsetByOverlaps(readgr, exongr)
@@ -182,7 +182,7 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
       eread2 = findInterval(readstarts, ends)
       coordOnTx = rep(0, nread)
       # maps to exon
-      idx1 = which(eread == eread2 + 1) 
+      idx1 = which(eread == eread2 + 1)
       if(length(idx1) > 0){
         coordOnTx[idx1] = exonLensCum[eread[idx1]] + readstarts[idx1] - starts[eread[idx1]] + 1
       }
@@ -195,7 +195,7 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
       if(length(idx3) > 0){
         coordOnTx[idx3] = readstarts[idx3] - starts[1] + 1
       }
-      # intron 
+      # intron
       idx4 = which(eread == eread2 & eread < ne & eread > 0)
       if(length(idx4) > 0){
         coordOnTx[idx4] = readstarts[idx4] + exonLensCum[ne+1]
@@ -203,7 +203,7 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
       # coordOnTx = coordOnTx[coordOnTx > 0]
 
       dist = matrix(rep(coordOnTxPos,nread), ncol=npos, byrow=T) -
-        matrix(rep(coordOnTx,npos), ncol=npos, byrow=F) 
+        matrix(rep(coordOnTx,npos), ncol=npos, byrow=F)
       if(str == "-"){dist = -dist}
       colnames(dist) = pas_ann$PAS_ID
       return(dist)
@@ -217,7 +217,7 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
     return(mat)
   })
   if(is.null(dist_by_pas_merge[[1]]) | is.null(dist_by_pas_merge[[2]])) return(NULL)
-  
+
   z = min(200, read_len*2)
   tp1 = colSums(dist_by_pas_merge[[1]] <= z & dist_by_pas_merge[[1]] >= 0)
   pas1 = names(tp1)[tp1 > 0]
@@ -294,7 +294,7 @@ get_reads_prob = function(bam_c1, bam_c2, density_train, conds, exongr, pas_ann,
 
   gc()
   return(list(prob = prob_reads_by_pas, nreads = nreads,
-              coordOnTxPos = coordOnTxPos))
+              coordOnTxPos = coordOnTxPos, pas = pas_filtered))
 }
 
 
@@ -315,13 +315,13 @@ get_reads_prob_predict = function(bam, density_train, exongr, pas_ann, num_thre,
   npos = length(pos)
   coordOnTxPos = rep(0, npos)
   # maps to exon
-  idx1 = which(epos == epos2 + 1) 
+  idx1 = which(epos == epos2 + 1)
   if(length(idx1) > 0){
     coordOnTxPos[idx1] = exonLensCum[epos[idx1]] + pos[idx1] - starts[epos[idx1]] + 1
   }
   # 3' UTR extension
   idx2 = which(epos == ne & epos2 == ne)
-  
+
   if(length(idx2) > 0){
     coordOnTxPos[idx2] = exonLensCum[ne+1] + pos[idx2] - ends[ne] + 1
   }
@@ -329,35 +329,35 @@ get_reads_prob_predict = function(bam, density_train, exongr, pas_ann, num_thre,
   if(length(idx3) > 0){
     coordOnTxPos[idx3] = pos[idx3] - starts[1] + 1
   }
-  
-  # intron 
+
+  # intron
   idx4 = which(epos == epos2 & epos < ne & epos > 0)
   if(length(idx4) > 0){
     coordOnTxPos[idx4] = pos[idx4] + exonLensCum[ne+1]
   }
   names(coordOnTxPos) = pos
-  
+
   if(str == "+"){
     gend = max(ends[ne], max(pas_ann$Position))
-    genegr = GRanges(seqnames = chr, 
+    genegr = GRanges(seqnames = chr,
                      strand = str,
                      ranges = IRanges(start = starts[1], end = gend))
   }
   if(str == "-"){
     gstart = min(starts[1], min(pas_ann$Position))
-    genegr = GRanges(seqnames = chr, 
+    genegr = GRanges(seqnames = chr,
                      strand = str,
                      ranges = IRanges(start = gstart, end = ends[ne]))
   }
-  
+
   ss = length(bam)
   dist_by_pas = lapply(1:ss, function(k){
     bam_path = bam[k]
     readstarts = get_reads_stranded(genegr, num_thre, bam_path)
     if(length(readstarts) <= num_thre) return(NULL)
-    
+
     if(region == "exon-only"){
-      readgr = GRanges(seqnames = chr, 
+      readgr = GRanges(seqnames = chr,
                        strand = str,
                        ranges = IRanges(start = readstarts, width = 1))
       readgr = subsetByOverlaps(readgr, exongr)
@@ -372,7 +372,7 @@ get_reads_prob_predict = function(bam, density_train, exongr, pas_ann, num_thre,
     eread2 = findInterval(readstarts, ends)
     coordOnTx = rep(0, nread)
     # maps to exon
-    idx1 = which(eread == eread2 + 1) 
+    idx1 = which(eread == eread2 + 1)
     if(length(idx1) > 0){
       coordOnTx[idx1] = exonLensCum[eread[idx1]] + readstarts[idx1] - starts[eread[idx1]] + 1
     }
@@ -385,15 +385,15 @@ get_reads_prob_predict = function(bam, density_train, exongr, pas_ann, num_thre,
     if(length(idx3) > 0){
       coordOnTx[idx3] = readstarts[idx3] - starts[1] + 1
     }
-    # intron 
+    # intron
     idx4 = which(eread == eread2 & eread < ne & eread > 0)
     if(length(idx4) > 0){
       coordOnTx[idx4] = readstarts[idx4] + exonLensCum[ne+1]
     }
     # coordOnTx = coordOnTx[coordOnTx > 0]
-    
+
     dist = matrix(rep(coordOnTxPos,nread), ncol=npos, byrow=T) -
-      matrix(rep(coordOnTx,npos), ncol=npos, byrow=F) 
+      matrix(rep(coordOnTx,npos), ncol=npos, byrow=F)
     if(str == "-"){dist = -dist}
     colnames(dist) = pas_ann$PAS_ID
     return(dist)
@@ -402,11 +402,11 @@ get_reads_prob_predict = function(bam, density_train, exongr, pas_ann, num_thre,
   ### for filtering
   dist_by_pas_merge = Reduce(rbind, dist_by_pas)
   if(is.null(dist_by_pas_merge)) return(NULL)
-  
+
   z = min(200, read_len*2)
   tp1 = colSums(dist_by_pas_merge <= z & dist_by_pas_merge >= 0)
   pasm = names(tp1)[tp1 > 0]
-  
+
   prob_reads_by_pas = lapply(1:ss, function(k){
     # print(k)
     if(is.null(dist_by_pas[[k]]))return(NULL)
@@ -427,7 +427,7 @@ get_reads_prob_predict = function(bam, density_train, exongr, pas_ann, num_thre,
     return(nrow(x))
   })
   if(sum(nreads) < num_thre) return(NULL)
-  
+
   prob_reads_by_pas = Reduce(rbind, prob_reads_by_pas)
 
   pas_filtered = colnames(prob_reads_by_pas)[colSums(prob_reads_by_pas) > 1e-3]

@@ -21,6 +21,8 @@
 #' @param region "all" (default). For test and debug only.
 #' @param gtf_rds NULL (default). For test and debug only.
 #' @param verbose FALSE (default). For test and debug only.
+#' @param paired A boolean indicating whether to perform paired test instead of unpaired test (defaults to FALSE).
+#' @param bed Aboolean indicating whether bedGraph files should be output for visualization in genome browser.
 #' @return \code{maaper} saves two text files, gene.txt and pas.txt, to \code{out_dir}.
 #' pas.txt contains the gene names, predicted PASs, and their corresponding fractions in the two conditions.
 #' gene.txt contains the genes' PAS number, p values, RED, RLDu, and RLDi scores.
@@ -29,18 +31,29 @@
 #' @import GenomicRanges
 #' @import GenomicAlignments
 #' @importFrom GenomicFeatures makeTxDbFromGFF exonsBy
-#' @importFrom GenomeInfoDb keepStandardChromosomes
-#' @importFrom stats density pchisq fisher.test
+#' @importFrom GenomeInfoDb keepStandardChromosomes seqlevels
+#' @importFrom stats density pchisq fisher.test pf complete.cases
+#' @importFrom MASS ginv
 #' @importFrom utils write.table
 #' @importFrom Rsamtools ScanBamParam
 #' @importFrom IRanges subsetByOverlaps IRanges
 #' @author Wei Vivian Li, \email{vivian.li@rutgers.edu}
+#' @examples
+#' \dontrun{
+#' # data used in this example can be found on the package's Github page
+#' pas_annotation = readRDS("./mouse.PAS.mm9.rds")
+#' gtf = "./gencode.mm9.chr19.gtf"
+#' bam_c1 = "./NT_chr19_example.bam"
+#' bam_c2 = "./AS_4h_chr19_example.bam"
+#' maaper(gtf, pas_annotation, output_dir = "./",
+#'        bam_c1, bam_c2, read_len = 76, ncores = 1)
+#' }
 maaper = function(gtf, pas_annotation, output_dir, bam_c1, bam_c2,
                   read_len, ncores = 1,
                   num_pas_thre = 25, frac_pas_thre = 0.05,
                   dist_thre = 600, num_thre = 50,
                   run = "all", subset = NULL, region = "all",
-                  gtf_rds = NULL, verbose = FALSE, paired = FALSE){
+                  gtf_rds = NULL, verbose = FALSE, paired = FALSE, bed = FALSE){
   dir.create(output_dir, recursive = T)
 
 
@@ -70,7 +83,7 @@ maaper = function(gtf, pas_annotation, output_dir, bam_c1, bam_c2,
   density_train_path = paste0(output_dir, "density_train.rds")
 
   save_path = paste0(output_dir, "result.rds")
-  
+
   wrap(pas_by_gene_single,
        pas_by_gene = pas_annotation, exons_gr,
        bam_c1, bam_c2, density_train_path,
@@ -90,6 +103,10 @@ maaper = function(gtf, pas_annotation, output_dir, bam_c1, bam_c2,
   gc()
   print(paired)
   maaper_write(save_path, output_dir, paired = paired)
+
+  if(bed){
+    write_bed(save_path, output_dir, read_len, paired = paired, ns = length(bam_c1))
+  }
 }
 
 maaper_predict = function(gtf, pas_annotation, output_dir, bam,

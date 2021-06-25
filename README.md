@@ -1,12 +1,16 @@
 MAAPER: Model-based analysis of alternative polyadenylation using 3' end-linked reads
 ================
 Wei Vivian Li, Bin Tian
-2021-01-12
+2021-06-24
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 <img src="https://github.com/Vivianstats/data-pkg/raw/main/img/MAAPER.png" height="200" align="right" />
 
 ## Latest News
+
+> 2021/06/15:
+
+-   Version 1.1.0 released!
 
 > 2020/01/02:
 
@@ -20,11 +24,10 @@ Any suggestions on the package are welcome! For technical problems, please repor
 
 ## Installation
 
-You can install `MAAPER` from github with:
+You can install `MAAPER` from CRAN with:
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("Vivianstats/MAAPER")
+install.packages("MAAPER")
 ```
 
 ## Quick start
@@ -54,8 +57,13 @@ maaper(gtf, # full path of the GTF file
        output_dir = "./", # output directory
        bam_c1, bam_c2, # full path of the BAM files
        read_len = 76, # read length
-       ncores = 12,  # number of cores used for parallel computation 
+       ncores = 12  # number of cores used for parallel computation 
       )
 ```
+
+Please note the following options in the `mapper` function:
+
+-   By default, `maaper` users the unpaired test. Please set `paired = TRUE` in order to use the paired test. We recommend only using the paired test when samples are paired and sample size is relatively large.
+-   If you would like to obtain bedGraph files corresponding to estimated APA profiles for visualization with UCSC or IGV genome browser, please set `bed = TRUE`. It is set to `FALSE` by default.
 
 Please refer to the package [manual](https://github.com/Vivianstats/MAAPER/blob/master/inst/docs/) for a full list of arguments and detailed usage.
