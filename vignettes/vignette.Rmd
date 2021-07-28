@@ -5,7 +5,7 @@ date: "`r Sys.Date()`"
 #output: rmarkdown::github_document
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{scLink: MAAPER: Model-based analysis of alternative polyadenylation using 3' end-linked reads}
+  %\VignetteIndexEntry{MAAPER: Model-based analysis of alternative polyadenylation using 3' end-linked reads}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
