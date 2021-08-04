@@ -81,3 +81,8 @@ Please note the following options in the `mapper` function:
 
 Please refer to the package [manual](https://github.com/Vivianstats/MAAPER/blob/master/inst/docs/)
 for a full list of arguments and detailed usage.
+
+## Citation
+
+Li, W. V., Zheng, D., Wang, R., & Tian, B. (2021). MAAPER: model-based analysis of alternative polyadenylation using 3'end-linked reads. Genome Biology, in press.
+[Link](https://www.biorxiv.org/content/10.1101/2021.03.21.436343v1.abstract)
