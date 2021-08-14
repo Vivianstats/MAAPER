@@ -2,7 +2,7 @@ MAAPER: Model-based analysis of alternative polyadenylation using 3’
 end-linked reads
 ================
 Wei Vivian Li, Bin Tian
-2021-08-04
+2021-08-13
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
@@ -10,13 +10,13 @@ Wei Vivian Li, Bin Tian
 
 ## Latest News
 
+> 2021/08/13:
+
+-   Version 1.1.1 released!
+
 > 2021/06/15:
 
 -   Version 1.1.0 released!
-
-> 2020/01/02:
-
--   Version 1.0.0 released!
 
 ## Introduction
 
